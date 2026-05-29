@@ -2,7 +2,8 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 import google.generativeai as genai
 
-genai.configure(api_key="AQ.Ab8RN6JER9n7pPjzS1GunG4AWCqwPMBm7pgMuDJM6jns0_6nJA")
+import os
+genai.configure(api_key=os.getenv("GEMINI_API_KEY", ""))
 model = genai.GenerativeModel("gemini-2.0-flash")
 
 router = APIRouter()
