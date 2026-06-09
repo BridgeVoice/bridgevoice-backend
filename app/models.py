@@ -12,4 +12,5 @@ class User(Base):
     language_background = Column(String, nullable=True)
     proficiency_level = Column(String, nullable=True)
     goals = Column(String, nullable=True)
+    daily_goal = Column(String, nullable=True)
     created_at = Column(DateTime, server_default=func.now())

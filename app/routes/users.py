@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User
-from app.schemas import UserRegister, UserLogin, UserResponse, Token
+from app.schemas import UserRegister, UserLogin, UserResponse, Token, OnboardingUpdate
 from app.auth import hash_password, verify_password, create_access_token
 
 router = APIRouter()
@@ -21,7 +21,8 @@ def register(user: UserRegister, db: Session = Depends(get_db)):
         hashed_password=hash_password(user.password),
         language_background=user.language_background,
         proficiency_level=user.proficiency_level,
-        goals=user.goals
+        goals=user.goals,
+        daily_goal=user.daily_goal
     )
     db.add(new_user)
     db.commit()
@@ -48,4 +49,21 @@ def get_profile(email: str, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == email).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+@router.put("/onboarding", response_model=UserResponse)
+def update_onboarding(data: OnboardingUpdate, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == data.email).first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.language_background = data.language_background
+    user.proficiency_level = data.proficiency_level
+    user.goals = data.goals
+    user.daily_goal = data.daily_goal
+
+    db.commit()
+    db.refresh(user)
+
     return user

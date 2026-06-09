@@ -8,6 +8,7 @@ class UserRegister(BaseModel):
     language_background: Optional[str] = None
     proficiency_level: Optional[str] = None
     goals: Optional[str] = None
+    daily_goal: Optional[str] = None
 
     @field_validator("password")
     @classmethod
@@ -27,9 +28,17 @@ class UserResponse(BaseModel):
     language_background: Optional[str] = None
     proficiency_level: Optional[str] = None
     goals: Optional[str] = None
+    daily_goal: Optional[str] = None
 
     class Config:
         from_attributes = True
+
+class OnboardingUpdate(BaseModel):
+    email: EmailStr
+    language_background: str
+    proficiency_level: str
+    goals: str
+    daily_goal: Optional[str] = None
 
 class Token(BaseModel):
     access_token: str
