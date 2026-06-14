@@ -4,6 +4,7 @@ from app.database import get_db
 from app.models import User
 from app.schemas import UserRegister, UserLogin, UserResponse, Token, OnboardingUpdate
 from app.auth import hash_password, verify_password, create_access_token
+from app.email_service import send_welcome_email 
 
 router = APIRouter()
 
@@ -27,7 +28,16 @@ def register(user: UserRegister, db: Session = Depends(get_db)):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-    return new_user
+
+    email_sent = send_welcome_email(
+        to_email=new_user.email,
+        full_name=new_user.full_name
+    )
+
+    return {
+    **new_user.__dict__,
+    "email_sent": email_sent
+    } 
 
 @router.post("/login", response_model=Token)
 def login(user: UserLogin, db: Session = Depends(get_db)):

@@ -29,6 +29,7 @@ class UserResponse(BaseModel):
     proficiency_level: Optional[str] = None
     goals: Optional[str] = None
     daily_goal: Optional[str] = None
+    email_sent: Optional[bool] = None
 
     class Config:
         from_attributes = True
