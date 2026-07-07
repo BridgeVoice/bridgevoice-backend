@@ -13,4 +13,6 @@ class User(Base):
     proficiency_level = Column(String, nullable=True)
     goals = Column(String, nullable=True)
     daily_goal = Column(String, nullable=True)
+    sessions_completed = Column(Integer, default=0)
+    total_xp = Column(Integer, default=0)
     created_at = Column(DateTime, server_default=func.now())

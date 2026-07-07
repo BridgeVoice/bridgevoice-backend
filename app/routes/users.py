@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User
-from app.schemas import UserRegister, UserLogin, UserResponse, Token, OnboardingUpdate
+from app.schemas import (UserRegister, UserLogin, UserResponse, Token, OnboardingUpdate, ActivityComplete)
 from app.auth import hash_password, verify_password, create_access_token
 from app.email_service import send_welcome_email 
 
@@ -77,3 +77,21 @@ def update_onboarding(data: OnboardingUpdate, db: Session = Depends(get_db)):
     db.refresh(user)
 
     return user
+
+@router.post("/complete-activity")
+def complete_activity(data: ActivityComplete, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == data.email).first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.sessions_completed += 1
+    user.total_xp += data.xp_earned
+
+    db.commit()
+    db.refresh(user)
+
+    return {
+        "sessions_completed": user.sessions_completed,
+        "total_xp": user.total_xp
+    }

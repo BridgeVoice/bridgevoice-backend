@@ -29,6 +29,8 @@ class UserResponse(BaseModel):
     proficiency_level: Optional[str] = None
     goals: Optional[str] = None
     daily_goal: Optional[str] = None
+    sessions_completed: Optional[int] = 0
+    total_xp: Optional[int] = 0
     email_sent: Optional[bool] = None
 
     class Config:
@@ -39,7 +41,11 @@ class OnboardingUpdate(BaseModel):
     language_background: str
     proficiency_level: str
     goals: str
-    daily_goal: Optional[str] = None
+    daily_goal: Optional[str] = None 
+
+class ActivityComplete(BaseModel):
+    email: EmailStr
+    xp_earned: int
 
 class Token(BaseModel):
     access_token: str
