@@ -83,13 +83,32 @@ BridgeVoice Team
     message.add_alternative(html_content, subtype="html")
 
     try:
-        with smtplib.SMTP(email_host, email_port) as server:
-            server.starttls()
-            server.login(email_username, email_password)
-            server.send_message(message)
+        if email_port == 465:
+            # Implicit SSL (encrypted from the first byte)
+            with smtplib.SMTP_SSL(email_host, email_port, timeout=15) as server:
+                server.login(email_username, email_password)
+                server.send_message(message)
+        else:
+            # STARTTLS (start plain, upgrade to encrypted) — e.g. port 587
+            with smtplib.SMTP(email_host, email_port, timeout=15) as server:
+                server.starttls()
+                server.login(email_username, email_password)
+                server.send_message(message)
 
         return True
 
     except Exception as e:
         print(f"Failed to send welcome email: {e}")
         return False
+    
+    # try:
+    #    with smtplib.SMTP(email_host, email_port) as server:
+    #        server.starttls()
+    #        server.login(email_username, email_password)
+    #        server.send_message(message)
+
+    #    return True
+
+    # except Exception as e:
+    #    print(f"Failed to send welcome email: {e}")
+    #    return False
