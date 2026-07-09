@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr, field_validator
 from typing import Optional
+from datetime import datetime
 
 class UserRegister(BaseModel):
     full_name: str
@@ -50,3 +51,18 @@ class ActivityComplete(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+class SessionHistoryCreate(BaseModel):
+    email: EmailStr
+    activity_name: str
+    score: int
+    xp_earned: int
+
+class SessionHistoryResponse(BaseModel):
+    activity_name: str
+    score: int
+    xp_earned: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import User
-from app.schemas import (UserRegister, UserLogin, UserResponse, Token, OnboardingUpdate, ActivityComplete)
+from app.models import User, SessionHistory
+from app.schemas import (UserRegister, UserLogin, UserResponse, Token, OnboardingUpdate, ActivityComplete, SessionHistoryCreate,
+    SessionHistoryResponse)
 from app.auth import hash_password, verify_password, create_access_token
 from app.email_service import send_welcome_email 
 
@@ -94,4 +95,35 @@ def complete_activity(data: ActivityComplete, db: Session = Depends(get_db)):
     return {
         "sessions_completed": user.sessions_completed,
         "total_xp": user.total_xp
-    }
+    } 
+
+@router.post("/session-history")
+def save_session(data: SessionHistoryCreate, db: Session = Depends(get_db)):
+
+    session = SessionHistory(
+        user_email=data.email,
+        activity_name=data.activity_name,
+        score=data.score,
+        xp_earned=data.xp_earned
+    )
+
+    db.add(session)
+    db.commit()
+    db.refresh(session)
+
+    return {"message": "Session saved"}
+
+#GET endpoint added
+@router.get("/session-history/{email}",
+            response_model=list[SessionHistoryResponse])
+def get_session_history(email: str, db: Session = Depends(get_db)):
+
+    sessions = (
+        db.query(SessionHistory)
+        .filter(SessionHistory.user_email == email)
+        .order_by(SessionHistory.created_at.desc())
+        .limit(5)
+        .all()
+    )
+
+    return sessions
