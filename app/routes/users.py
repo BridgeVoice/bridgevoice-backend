@@ -1,11 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from datetime import date, datetime, timezone, timedelta
 from app.database import get_db
 from app.models import User, SessionHistory
 from app.schemas import (UserRegister, UserLogin, UserResponse, Token, OnboardingUpdate, ActivityComplete, SessionHistoryCreate,
     SessionHistoryResponse)
 from app.auth import hash_password, verify_password, create_access_token
 from app.email_service import send_welcome_email 
+
 
 router = APIRouter()
 
@@ -126,4 +128,25 @@ def get_session_history(email: str, db: Session = Depends(get_db)):
         .all()
     )
 
-    return sessions
+    return sessions 
+
+#todays session on Daily Goal Progress
+@router.get("/today-sessions/{email}")
+def get_today_sessions(email: str, db: Session = Depends(get_db)):
+
+    today_utc = datetime.now(timezone.utc).date()
+
+    start_of_day = datetime.combine(
+        today_utc,
+        datetime.min.time()
+    )
+
+    end_of_day = start_of_day + timedelta(days=1)
+
+    count = db.query(SessionHistory).filter(
+        SessionHistory.user_email == email,
+        SessionHistory.created_at >= start_of_day,
+        SessionHistory.created_at < end_of_day
+    ).count()
+
+    return {"today_sessions": count}
