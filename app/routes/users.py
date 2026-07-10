@@ -60,9 +60,50 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
 @router.get("/profile", response_model=UserResponse)
 def get_profile(email: str, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == email).first()
+
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    return user
+
+    # Gets every unique day on which the user completed a session
+    session_dates = {
+        session.created_at.date()
+        for session in db.query(SessionHistory)
+        .filter(SessionHistory.user_email == email)
+        .all()
+        if session.created_at
+    }
+
+    today = datetime.now(timezone.utc).date()
+    yesterday = today - timedelta(days=1)
+
+    # A streak remains active if the user practised today or yesterday
+    if today in session_dates:
+        current_date = today
+    elif yesterday in session_dates:
+        current_date = yesterday
+    else:
+        current_date = None
+
+    day_streak = 0
+
+    # Counts backwards through consecutive practice days
+    while current_date and current_date in session_dates:
+        day_streak += 1
+        current_date -= timedelta(days=1)
+
+    return {
+        "id": user.id,
+        "full_name": user.full_name,
+        "email": user.email,
+        "language_background": user.language_background,
+        "proficiency_level": user.proficiency_level,
+        "goals": user.goals,
+        "daily_goal": user.daily_goal,
+        "sessions_completed": user.sessions_completed,
+        "total_xp": user.total_xp,
+        "day_streak": day_streak,
+        "email_sent": None
+    }
 
 @router.put("/onboarding", response_model=UserResponse)
 def update_onboarding(data: OnboardingUpdate, db: Session = Depends(get_db)):

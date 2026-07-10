@@ -32,6 +32,8 @@ class UserResponse(BaseModel):
     daily_goal: Optional[str] = None
     sessions_completed: Optional[int] = 0
     total_xp: Optional[int] = 0
+    # Number of consecutive days the user has completed at least one session
+    day_streak: Optional[int] = 0
     email_sent: Optional[bool] = None
 
     class Config:
