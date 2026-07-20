@@ -8,6 +8,7 @@ from app.routes import users
 from app.routes import chat
 from app.routes import grammar
 from app.routes import phrases
+from app.routes import tts
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -24,10 +25,11 @@ app.add_middleware(
 )
 
 # Routes
-app.include_router(users.router, prefix="/api/users", tags=["users"])
-app.include_router(chat.router, prefix="/api", tags=["chat"])
-app.include_router(grammar.router, prefix="/api", tags=["grammar"])
-app.include_router(phrases.router, prefix="/api", tags=["phrases"]) 
+app.include_router(users.router,   prefix="/api/users", tags=["users"])
+app.include_router(chat.router,    prefix="/api",        tags=["chat"])
+app.include_router(grammar.router, prefix="/api",        tags=["grammar"])
+app.include_router(phrases.router, prefix="/api",        tags=["phrases"])
+app.include_router(tts.router,     prefix="/api",        tags=["tts"])
 
 
 @app.get("/")
