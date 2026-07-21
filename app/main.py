@@ -10,6 +10,7 @@ from app.routes import grammar
 from app.routes import phrases
 from app.routes import tts
 from app.routes import vocabulary
+from app.routes import daily_challenge
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -19,12 +20,11 @@ app = FastAPI(title="BridgeVoice API")
 # Allow frontend to talk to backend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 # Routes
 app.include_router(users.router, prefix="/api/users", tags=["users"])
 app.include_router(chat.router, prefix="/api", tags=["chat"])
@@ -32,6 +32,7 @@ app.include_router(grammar.router, prefix="/api", tags=["grammar"])
 app.include_router(phrases.router, prefix="/api", tags=["phrases"])
 app.include_router(tts.router, prefix="/api", tags=["tts"])
 app.include_router(vocabulary.router, prefix="/api", tags=["vocabulary"])
+app.include_router(daily_challenge.router, prefix="/api", tags=["daily-challenge"])
 
 
 @app.get("/")
