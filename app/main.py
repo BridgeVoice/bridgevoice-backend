@@ -10,6 +10,7 @@ from app.routes import grammar
 from app.routes import phrases
 from app.routes import tts
 from app.routes import vocabulary
+from app.routes import interview
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -32,6 +33,7 @@ app.include_router(grammar.router, prefix="/api", tags=["grammar"])
 app.include_router(phrases.router, prefix="/api", tags=["phrases"])
 app.include_router(tts.router, prefix="/api", tags=["tts"])
 app.include_router(vocabulary.router, prefix="/api", tags=["vocabulary"])
+app.include_router(interview.router, prefix="/api", tags=["interview"])
 
 
 @app.get("/")
