@@ -11,6 +11,7 @@ from app.routes import phrases
 from app.routes import tts
 from app.routes import vocabulary
 from app.routes import daily_challenge
+from app.routes import quiz 
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -33,6 +34,7 @@ app.include_router(phrases.router, prefix="/api", tags=["phrases"])
 app.include_router(tts.router, prefix="/api", tags=["tts"])
 app.include_router(vocabulary.router, prefix="/api", tags=["vocabulary"])
 app.include_router(daily_challenge.router, prefix="/api", tags=["daily-challenge"])
+app.include_router(quiz.router, prefix="/api", tags=["quiz"])
 
 
 @app.get("/")
