@@ -13,6 +13,7 @@ from app.routes import vocabulary
 from app.routes import interview
 from app.routes import daily_challenge
 from app.routes import quiz 
+from app.routes import culture
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -37,6 +38,7 @@ app.include_router(vocabulary.router, prefix="/api", tags=["vocabulary"])
 app.include_router(interview.router, prefix="/api", tags=["interview"])
 app.include_router(daily_challenge.router, prefix="/api", tags=["daily-challenge"])
 app.include_router(quiz.router, prefix="/api", tags=["quiz"])
+app.include_router(culture.router, prefix="/api", tags=["culture"])
 
 
 @app.get("/")
