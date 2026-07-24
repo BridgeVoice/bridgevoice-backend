@@ -99,3 +99,9 @@ class ChangePasswordRequest(BaseModel):
     email: EmailStr
     current_password: str
     new_password: str
+   
+
+class DailyChallengeComplete(BaseModel):
+    email: EmailStr
+    score: int 
+

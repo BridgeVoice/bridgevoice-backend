@@ -4,7 +4,7 @@ from datetime import date, datetime, timezone, timedelta
 from app.database import get_db
 from app.models import User, SessionHistory, Post, StudyBuddyRequest, Message
 from app.schemas import (UserRegister, UserLogin, UserResponse, Token, OnboardingUpdate, ActivityComplete, SessionHistoryCreate,
-    SessionHistoryResponse)
+    SessionHistoryResponse,  DailyChallengeComplete)
 from app.auth import hash_password, verify_password, create_access_token
 from app.email_service import send_welcome_email 
 
@@ -210,4 +210,70 @@ def change_password(data: ChangePasswordRequest, db: Session = Depends(get_db)):
     db.commit()
 
     return {"message": "Password updated"}
+
+
+@router.post("/complete-daily-challenge")
+def complete_daily_challenge(
+    data: DailyChallengeComplete,
+    db: Session = Depends(get_db)
+):
+    user = db.query(User).filter(User.email == data.email).first()
+
+    if not user:
+        raise HTTPException(
+        status_code=404,
+        detail="User not found"
+        )
+
+    today_utc = datetime.now(timezone.utc).date()
+
+    start_of_day = datetime.combine(
+        today_utc,
+        datetime.min.time()
+    )
+
+    end_of_day = start_of_day + timedelta(days=1)
+
+    existing_challenge = db.query(SessionHistory).filter(
+        SessionHistory.user_email == data.email,
+        SessionHistory.activity_name == "Daily Challenge",
+        SessionHistory.created_at >= start_of_day,
+        SessionHistory.created_at < end_of_day
+    ).first()
+
+    # Prevents the same Daily Challenge from awarding XP more than once per day
+    if existing_challenge:
+        return {
+            "already_completed": True,
+            "message": "Daily Challenge already completed today.",
+            "sessions_completed": user.sessions_completed,
+            "total_xp": user.total_xp
+        }
+    
+    # Awards the full Daily Challenge reward once
+    user.sessions_completed += 1
+    user.total_xp += 75 
+
+    # Saves one Daily Challenge session in recent history
+    session = SessionHistory(
+        user_email=data.email,
+        activity_name="Daily Challenge",
+        score=data.score,
+        xp_earned=75
+    )
+
+    db.add(session)
+
+    # Saves the XP update and session history together
+    db.commit()
+    db.refresh(user)
+
+    return {
+        "already_completed": False,
+        "message": "Daily Challenge completed successfully.",
+        "sessions_completed": user.sessions_completed,
+        "total_xp": user.total_xp,
+        "xp_earned": 75,
+        "score": data.score
+    }
 
