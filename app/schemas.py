@@ -94,3 +94,8 @@ class StudyBuddyResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class ChangePasswordRequest(BaseModel):
+    email: EmailStr
+    current_password: str
+    new_password: str

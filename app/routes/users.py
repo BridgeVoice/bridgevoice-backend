@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from datetime import date, datetime, timezone, timedelta
 from app.database import get_db
-from app.models import User, SessionHistory
+from app.models import User, SessionHistory, Post, StudyBuddyRequest, Message
 from app.schemas import (UserRegister, UserLogin, UserResponse, Token, OnboardingUpdate, ActivityComplete, SessionHistoryCreate,
     SessionHistoryResponse)
 from app.auth import hash_password, verify_password, create_access_token
@@ -191,3 +191,23 @@ def get_today_sessions(email: str, db: Session = Depends(get_db)):
     ).count()
 
     return {"today_sessions": count}
+
+from app.schemas import ChangePasswordRequest
+
+@router.put("/change-password")
+def change_password(data: ChangePasswordRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == data.email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if not verify_password(data.current_password, user.hashed_password):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+
+    if len(data.new_password) < 8:
+        raise HTTPException(status_code=400, detail="New password must be at least 8 characters long")
+
+    user.hashed_password = hash_password(data.new_password)
+    db.commit()
+
+    return {"message": "Password updated"}
+
