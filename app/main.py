@@ -14,6 +14,10 @@ from app.routes import interview
 from app.routes import daily_challenge
 from app.routes import quiz 
 from app.routes import culture
+from app.routes import leaderboard
+from app.routes import posts
+from app.routes import study_buddies
+from app.routes import study_buddy_requests, messages
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -39,6 +43,11 @@ app.include_router(interview.router, prefix="/api", tags=["interview"])
 app.include_router(daily_challenge.router, prefix="/api", tags=["daily-challenge"])
 app.include_router(quiz.router, prefix="/api", tags=["quiz"])
 app.include_router(culture.router, prefix="/api", tags=["culture"])
+app.include_router(leaderboard.router, prefix="/api", tags=["leaderboard"])
+app.include_router(posts.router, prefix="/api", tags=["posts"])
+app.include_router(study_buddies.router, prefix="/api", tags=["study-buddies"])
+app.include_router(study_buddy_requests.router, prefix="/api", tags=["study-buddy-requests"])
+app.include_router(messages.router, prefix="/api", tags=["messages"])
 
 
 @app.get("/")

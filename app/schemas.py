@@ -68,3 +68,29 @@ class SessionHistoryResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class PostCreate(BaseModel):
+    user_email: str
+    content: str
+
+class PostResponse(BaseModel):
+    id: int
+    user_email: str
+    content: str
+    likes: int
+    created_at: datetime
+    full_name: str
+
+    class Config:
+        from_attributes = True
+
+class StudyBuddyResponse(BaseModel):
+    email: str
+    full_name: str
+    language_background: Optional[str] = None
+    proficiency_level: Optional[str] = None
+    goals: Optional[str] = None
+    compatibility_score: int
+
+    class Config:
+        from_attributes = True
