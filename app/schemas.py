@@ -105,3 +105,6 @@ class DailyChallengeComplete(BaseModel):
     email: EmailStr
     score: int 
 
+class ChangeEmailRequest(BaseModel):
+    current_email: EmailStr
+    new_email: EmailStr

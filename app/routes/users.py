@@ -3,13 +3,23 @@ from sqlalchemy.orm import Session
 from datetime import date, datetime, timezone, timedelta
 from app.database import get_db
 from app.models import User, SessionHistory, Post, StudyBuddyRequest, Message
-from app.schemas import (UserRegister, UserLogin, UserResponse, Token, OnboardingUpdate, ActivityComplete, SessionHistoryCreate,
-    SessionHistoryResponse,  DailyChallengeComplete)
+from app.schemas import (
+    UserRegister,
+    UserLogin,
+    UserResponse,
+    Token,
+    OnboardingUpdate,
+    ActivityComplete,
+    SessionHistoryCreate,
+    SessionHistoryResponse,
+    DailyChallengeComplete,
+    ChangeEmailRequest,
+)
 from app.auth import hash_password, verify_password, create_access_token
-from app.email_service import send_welcome_email 
-
+from app.email_service import send_welcome_email
 
 router = APIRouter()
+
 
 @router.post("/register", response_model=UserResponse)
 def register(user: UserRegister, db: Session = Depends(get_db)):
@@ -17,7 +27,7 @@ def register(user: UserRegister, db: Session = Depends(get_db)):
     existing_user = db.query(User).filter(User.email == user.email).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
-    
+
     # Create new user
     new_user = User(
         full_name=user.full_name,
@@ -26,21 +36,18 @@ def register(user: UserRegister, db: Session = Depends(get_db)):
         language_background=user.language_background,
         proficiency_level=user.proficiency_level,
         goals=user.goals,
-        daily_goal=user.daily_goal
+        daily_goal=user.daily_goal,
     )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
 
     email_sent = send_welcome_email(
-        to_email=new_user.email,
-        full_name=new_user.full_name
+        to_email=new_user.email, full_name=new_user.full_name
     )
 
-    return {
-    **new_user.__dict__,
-    "email_sent": email_sent
-    } 
+    return {**new_user.__dict__, "email_sent": email_sent}
+
 
 @router.post("/login", response_model=Token)
 def login(user: UserLogin, db: Session = Depends(get_db)):
@@ -48,14 +55,15 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
     db_user = db.query(User).filter(User.email == user.email).first()
     if not db_user:
         raise HTTPException(status_code=400, detail="Invalid email or password")
-    
+
     # Check password
     if not verify_password(user.password, db_user.hashed_password):
         raise HTTPException(status_code=400, detail="Invalid email or password")
-    
+
     # Create token
     token = create_access_token(data={"sub": db_user.email})
     return {"access_token": token, "token_type": "bearer"}
+
 
 @router.get("/profile", response_model=UserResponse)
 def get_profile(email: str, db: Session = Depends(get_db)):
@@ -102,8 +110,9 @@ def get_profile(email: str, db: Session = Depends(get_db)):
         "sessions_completed": user.sessions_completed,
         "total_xp": user.total_xp,
         "day_streak": day_streak,
-        "email_sent": None
+        "email_sent": None,
     }
+
 
 @router.put("/onboarding", response_model=UserResponse)
 def update_onboarding(data: OnboardingUpdate, db: Session = Depends(get_db)):
@@ -122,6 +131,7 @@ def update_onboarding(data: OnboardingUpdate, db: Session = Depends(get_db)):
 
     return user
 
+
 @router.post("/complete-activity")
 def complete_activity(data: ActivityComplete, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == data.email).first()
@@ -135,10 +145,8 @@ def complete_activity(data: ActivityComplete, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
 
-    return {
-        "sessions_completed": user.sessions_completed,
-        "total_xp": user.total_xp
-    } 
+    return {"sessions_completed": user.sessions_completed, "total_xp": user.total_xp}
+
 
 @router.post("/session-history")
 def save_session(data: SessionHistoryCreate, db: Session = Depends(get_db)):
@@ -147,7 +155,7 @@ def save_session(data: SessionHistoryCreate, db: Session = Depends(get_db)):
         user_email=data.email,
         activity_name=data.activity_name,
         score=data.score,
-        xp_earned=data.xp_earned
+        xp_earned=data.xp_earned,
     )
 
     db.add(session)
@@ -156,9 +164,9 @@ def save_session(data: SessionHistoryCreate, db: Session = Depends(get_db)):
 
     return {"message": "Session saved"}
 
-#GET endpoint added
-@router.get("/session-history/{email}",
-            response_model=list[SessionHistoryResponse])
+
+# GET endpoint added
+@router.get("/session-history/{email}", response_model=list[SessionHistoryResponse])
 def get_session_history(email: str, db: Session = Depends(get_db)):
 
     sessions = (
@@ -169,30 +177,34 @@ def get_session_history(email: str, db: Session = Depends(get_db)):
         .all()
     )
 
-    return sessions 
+    return sessions
 
-#todays session on Daily Goal Progress
+
+# todays session on Daily Goal Progress
 @router.get("/today-sessions/{email}")
 def get_today_sessions(email: str, db: Session = Depends(get_db)):
 
     today_utc = datetime.now(timezone.utc).date()
 
-    start_of_day = datetime.combine(
-        today_utc,
-        datetime.min.time()
-    )
+    start_of_day = datetime.combine(today_utc, datetime.min.time())
 
     end_of_day = start_of_day + timedelta(days=1)
 
-    count = db.query(SessionHistory).filter(
-        SessionHistory.user_email == email,
-        SessionHistory.created_at >= start_of_day,
-        SessionHistory.created_at < end_of_day
-    ).count()
+    count = (
+        db.query(SessionHistory)
+        .filter(
+            SessionHistory.user_email == email,
+            SessionHistory.created_at >= start_of_day,
+            SessionHistory.created_at < end_of_day,
+        )
+        .count()
+    )
 
     return {"today_sessions": count}
 
+
 from app.schemas import ChangePasswordRequest
+
 
 @router.put("/change-password")
 def change_password(data: ChangePasswordRequest, db: Session = Depends(get_db)):
@@ -204,7 +216,9 @@ def change_password(data: ChangePasswordRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Current password is incorrect")
 
     if len(data.new_password) < 8:
-        raise HTTPException(status_code=400, detail="New password must be at least 8 characters long")
+        raise HTTPException(
+            status_code=400, detail="New password must be at least 8 characters long"
+        )
 
     user.hashed_password = hash_password(data.new_password)
     db.commit()
@@ -214,32 +228,29 @@ def change_password(data: ChangePasswordRequest, db: Session = Depends(get_db)):
 
 @router.post("/complete-daily-challenge")
 def complete_daily_challenge(
-    data: DailyChallengeComplete,
-    db: Session = Depends(get_db)
+    data: DailyChallengeComplete, db: Session = Depends(get_db)
 ):
     user = db.query(User).filter(User.email == data.email).first()
 
     if not user:
-        raise HTTPException(
-        status_code=404,
-        detail="User not found"
-        )
+        raise HTTPException(status_code=404, detail="User not found")
 
     today_utc = datetime.now(timezone.utc).date()
 
-    start_of_day = datetime.combine(
-        today_utc,
-        datetime.min.time()
-    )
+    start_of_day = datetime.combine(today_utc, datetime.min.time())
 
     end_of_day = start_of_day + timedelta(days=1)
 
-    existing_challenge = db.query(SessionHistory).filter(
-        SessionHistory.user_email == data.email,
-        SessionHistory.activity_name == "Daily Challenge",
-        SessionHistory.created_at >= start_of_day,
-        SessionHistory.created_at < end_of_day
-    ).first()
+    existing_challenge = (
+        db.query(SessionHistory)
+        .filter(
+            SessionHistory.user_email == data.email,
+            SessionHistory.activity_name == "Daily Challenge",
+            SessionHistory.created_at >= start_of_day,
+            SessionHistory.created_at < end_of_day,
+        )
+        .first()
+    )
 
     # Prevents the same Daily Challenge from awarding XP more than once per day
     if existing_challenge:
@@ -247,19 +258,19 @@ def complete_daily_challenge(
             "already_completed": True,
             "message": "Daily Challenge already completed today.",
             "sessions_completed": user.sessions_completed,
-            "total_xp": user.total_xp
+            "total_xp": user.total_xp,
         }
-    
+
     # Awards the full Daily Challenge reward once
     user.sessions_completed += 1
-    user.total_xp += 75 
+    user.total_xp += 75
 
     # Saves one Daily Challenge session in recent history
     session = SessionHistory(
         user_email=data.email,
         activity_name="Daily Challenge",
         score=data.score,
-        xp_earned=75
+        xp_earned=75,
     )
 
     db.add(session)
@@ -274,6 +285,61 @@ def complete_daily_challenge(
         "sessions_completed": user.sessions_completed,
         "total_xp": user.total_xp,
         "xp_earned": 75,
-        "score": data.score
+        "score": data.score,
     }
 
+
+@router.put("/change-email")
+def change_email(data: ChangeEmailRequest, db: Session = Depends(get_db)):
+    # Finds the user using the current email address
+    user = db.query(User).filter(User.email == data.current_email).first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Prevents changing to the same email address
+    if data.current_email == data.new_email:
+        raise HTTPException(
+            status_code=400,
+            detail="New email must be different from the current email"
+        )
+
+    # Prevents two users from having the same email address
+    existing_user = db.query(User).filter(User.email == data.new_email).first()
+
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already in use")
+
+    # Updates the user's email address
+    old_email = user.email
+    user.email = data.new_email
+
+    # Updates the email in all related records
+    db.query(SessionHistory).filter(SessionHistory.user_email == old_email).update(
+        {"user_email": data.new_email}
+    )
+
+    db.query(Post).filter(Post.user_email == old_email).update(
+        {"user_email": data.new_email}
+    )
+
+    db.query(StudyBuddyRequest).filter(
+        StudyBuddyRequest.from_email == old_email
+    ).update({"from_email": data.new_email})
+
+    db.query(StudyBuddyRequest).filter(StudyBuddyRequest.to_email == old_email).update(
+        {"to_email": data.new_email}
+    )
+
+    db.query(Message).filter(Message.from_email == old_email).update(
+        {"from_email": data.new_email}
+    )
+
+    db.query(Message).filter(Message.to_email == old_email).update(
+        {"to_email": data.new_email}
+    )
+
+    # Saves all email changes to the database
+    db.commit()
+
+    return {"message": "Email updated successfully", "new_email": data.new_email}
