@@ -28,11 +28,17 @@ app = FastAPI(title="BridgeVoice API")
 # Allow frontend to talk to backend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://bridgevoicecanada.com",
+        "https://www.bridgevoicecanada.com",
+        "https://bridgevoice-frontend.vercel.app",
+        "http://localhost:5173",
+    ],
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 # Routes
 # users stays partially public (register/login); its protected endpoints are marked individually
 app.include_router(users.router, prefix="/api/users", tags=["users"])
