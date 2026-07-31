@@ -15,7 +15,7 @@ from app.schemas import (
     DailyChallengeComplete,
     ChangeEmailRequest,
 )
-from app.auth import hash_password, verify_password, create_access_token
+from app.auth import hash_password, verify_password, create_access_token, get_current_user_email
 from app.email_service import send_welcome_email
 
 router = APIRouter()
@@ -65,7 +65,7 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
     return {"access_token": token, "token_type": "bearer"}
 
 
-@router.get("/profile", response_model=UserResponse)
+@router.get("/profile", response_model=UserResponse, dependencies=[Depends(get_current_user_email)])
 def get_profile(email: str, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == email).first()
 
@@ -114,7 +114,7 @@ def get_profile(email: str, db: Session = Depends(get_db)):
     }
 
 
-@router.put("/onboarding", response_model=UserResponse)
+@router.put("/onboarding", response_model=UserResponse, dependencies=[Depends(get_current_user_email)])
 def update_onboarding(data: OnboardingUpdate, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == data.email).first()
 
@@ -132,7 +132,7 @@ def update_onboarding(data: OnboardingUpdate, db: Session = Depends(get_db)):
     return user
 
 
-@router.post("/complete-activity")
+@router.post("/complete-activity", dependencies=[Depends(get_current_user_email)])
 def complete_activity(data: ActivityComplete, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == data.email).first()
 
@@ -148,7 +148,7 @@ def complete_activity(data: ActivityComplete, db: Session = Depends(get_db)):
     return {"sessions_completed": user.sessions_completed, "total_xp": user.total_xp}
 
 
-@router.post("/session-history")
+@router.post("/session-history", dependencies=[Depends(get_current_user_email)])
 def save_session(data: SessionHistoryCreate, db: Session = Depends(get_db)):
 
     session = SessionHistory(
@@ -166,7 +166,7 @@ def save_session(data: SessionHistoryCreate, db: Session = Depends(get_db)):
 
 
 # GET endpoint added
-@router.get("/session-history/{email}", response_model=list[SessionHistoryResponse])
+@router.get("/session-history/{email}", response_model=list[SessionHistoryResponse], dependencies=[Depends(get_current_user_email)])
 def get_session_history(email: str, db: Session = Depends(get_db)):
 
     sessions = (
@@ -181,7 +181,7 @@ def get_session_history(email: str, db: Session = Depends(get_db)):
 
 
 # todays session on Daily Goal Progress
-@router.get("/today-sessions/{email}")
+@router.get("/today-sessions/{email}", dependencies=[Depends(get_current_user_email)])
 def get_today_sessions(email: str, db: Session = Depends(get_db)):
 
     today_utc = datetime.now(timezone.utc).date()
@@ -206,7 +206,7 @@ def get_today_sessions(email: str, db: Session = Depends(get_db)):
 from app.schemas import ChangePasswordRequest
 
 
-@router.put("/change-password")
+@router.put("/change-password", dependencies=[Depends(get_current_user_email)])
 def change_password(data: ChangePasswordRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == data.email).first()
     if not user:
@@ -226,7 +226,7 @@ def change_password(data: ChangePasswordRequest, db: Session = Depends(get_db)):
     return {"message": "Password updated"}
 
 
-@router.post("/complete-daily-challenge")
+@router.post("/complete-daily-challenge", dependencies=[Depends(get_current_user_email)])
 def complete_daily_challenge(
     data: DailyChallengeComplete, db: Session = Depends(get_db)
 ):
@@ -289,7 +289,7 @@ def complete_daily_challenge(
     }
 
 
-@router.put("/change-email")
+@router.put("/change-email", dependencies=[Depends(get_current_user_email)])
 def change_email(data: ChangeEmailRequest, db: Session = Depends(get_db)):
     # Finds the user using the current email address
     user = db.query(User).filter(User.email == data.current_email).first()

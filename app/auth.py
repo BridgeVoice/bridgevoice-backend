@@ -3,6 +3,9 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 import os
 from dotenv import load_dotenv
+from typing import Optional
+from fastapi import Depends, HTTPException
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 load_dotenv()
 
@@ -33,3 +36,25 @@ def verify_token(token: str):
         return email
     except JWTError:
         return None
+
+# FastAPI dependency: require a valid JWT on a route.
+# Usage in a route:  email: str = Depends(get_current_user_email)
+bearer_scheme = HTTPBearer(auto_error=False)
+
+def get_current_user_email(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
+) -> str:
+    if credentials is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    email = verify_token(credentials.credentials)
+    if email is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or expired token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return email
